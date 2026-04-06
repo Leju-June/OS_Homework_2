@@ -36,3 +36,27 @@ jobs:
           # 빌드 시간 단축을 위한 캐시 설정 추가 (최적화)
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/age-predict-api:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/age-predict-api:buildcache,mode=max
+
+  deploy-to-local:
+    needs: build-and-push  # 빌드와 푸시가 완료된 후 실행
+    runs-on: self-hosted   # 내 컴퓨터에 등록된 런너 사용
+
+    steps:
+      - name: 🔐 Log in to Docker Hub
+        shell: pwsh
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: ⬇️ Pull latest Docker image
+        shell: pwsh
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/age-predict-api:latest
+
+      - name: 🛑 Stop and remove existing container
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          docker stop age-predict-api
+          docker rm age-predict-api
+
+      - name: 🚀 Run new container
+        shell: pwsh
+        run: docker run -d -p 8000:8000 --name age-predict-api ${{ secrets.DOCKERHUB_USERNAME }}/age-predict-api:latest
