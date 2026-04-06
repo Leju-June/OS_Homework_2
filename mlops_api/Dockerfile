@@ -4,8 +4,7 @@ FROM python:3.9-slim AS builder
 WORKDIR /build
 
 # pip 최신화 및 휠(wheel) 빌드를 위한 기본 도구
-RUN apt-get update && apt-get install -y gcc default-libmysqlclient-dev && \
-    pip install --upgrade pip
+RUN pip install --upgrade pip
 
 COPY requirements.txt .
 
@@ -18,12 +17,6 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# OpenCV 등 이미지 처리에 필요한 시스템 라이브러리만 설치 후 apt 캐시 삭제
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Builder stage에서 만들어진 패키지 파일(wheels)을 복사 후 설치
 COPY --from=builder /build/wheels /wheels
