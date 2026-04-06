@@ -17,6 +17,11 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# OpenCV 의존성 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0 libgl1 libsm6 libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
 
 # Builder stage에서 만들어진 패키지 파일(wheels)을 복사 후 설치
 COPY --from=builder /build/wheels /wheels
