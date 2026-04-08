@@ -5,8 +5,8 @@ from app.model_service import analyze_face_from_image
 
 # FastAPI 애플리케이션 초기화
 app = FastAPI(
-    title="얼굴 인식 및 나이 예측 API",
-    description="가벼운 얼굴 인식 모델(DeepFace)을 이용한 나이 예측 MLOps 서버입니다.",
+    title="얼굴형 측정 API",
+    description="MediaPipe Face Mesh를 이용한 얼굴형(계란형, 둥근형 등) 판별 MLOps 서버입니다.",
     version="1.0.0"
 )
 
@@ -16,7 +16,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Age Predictor</title>
+    <title>Face Shape Analyzer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -226,8 +226,8 @@ HTML_TEMPLATE = """
 <body>
 
 <div class="container">
-    <h1>Face Age & Gender Predictor</h1>
-    <p class="subtitle">AI 기반 얼굴 나이 및 성별 분석 서비스</p>
+    <h1>Face Shape Analyzer</h1>
+    <p class="subtitle">AI 기반 얼굴형 분류 서비스</p>
 
     <div class="upload-area" id="drop-zone">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,16 +248,16 @@ HTML_TEMPLATE = """
     </div>
 
     <button id="predict-btn" class="btn" disabled>
-        <span id="btn-text">나이 분석하기</span>
+        <span id="btn-text">얼굴형 측정하기</span>
         <div class="spinner" id="spinner"></div>
     </button>
 
     <div id="error-message"></div>
 
     <div id="result-container">
-        <div class="result-text">분석된 예측 결과</div>
+        <div class="result-text">얼굴형 및 성별 판별 결과</div>
         <div class="result-age">
-            <span id="gender-value">-</span>, <span id="age-value">0</span>세
+            <span id="gender-value">-</span>성, <span id="shape-value">-</span>
         </div>
     </div>
 </div>
@@ -272,7 +272,7 @@ HTML_TEMPLATE = """
     const btnText = document.getElementById('btn-text');
     const spinner = document.getElementById('spinner');
     const resultContainer = document.getElementById('result-container');
-    const ageValue = document.getElementById('age-value');
+    const shapeValue = document.getElementById('shape-value');
     const genderValue = document.getElementById('gender-value');
     const errorMessage = document.getElementById('error-message');
 
@@ -385,7 +385,7 @@ HTML_TEMPLATE = """
                 throw new Error(result.detail || '분석 중 오류가 발생했습니다.');
             }
 
-            ageValue.textContent = result.predicted_age;
+            shapeValue.textContent = result.predicted_shape;
             genderValue.textContent = result.predicted_gender;
             resultContainer.style.display = 'block';
 
@@ -416,13 +416,13 @@ async def predict_api(file: UploadFile = File(...)):
         # 업로드된 이미지 파일 읽기
         contents = await file.read()
         
-        # 모델 서버를 통한 나이 및 성별 예측
+        # 모델 서버를 통한 얼굴형 예측
         prediction = analyze_face_from_image(contents)
         
         return {
             "filename": file.filename, 
-            "predicted_age": int(prediction['age']),
-            "predicted_gender": prediction['gender'],
+            "predicted_shape": prediction['face_shape'],
+            "predicted_gender": prediction.get('predicted_gender', '알 수 없음'),
             "message": "성공적으로 분석되었습니다."
         }
     except Exception as e:
